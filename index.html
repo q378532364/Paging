@@ -1,0 +1,321 @@
+
+<!--
+ * @Descripttion: 
+ * @version: v1.0
+ * @Author: @blxw
+ * @Date: 2020-03-12 18:00:00
+ * @LastEditors: @blxw
+ * @LastEditTime: 2020-04-20 18:31:51
+ -->
+<!--<!DOCTYPE html-->
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title></title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="" />
+</head>
+
+<body>
+    <div class="page">
+    </div>
+    <!--[if lt IE 7]>
+                   <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+               <![endif]-->
+    <script>
+
+    </script>
+    <script>
+        function Pagination(paramsObj) {
+            this.init(paramsObj);
+        }
+        Pagination.prototype = {
+            state: {
+                current: 1, pageCount: 0, pageCount: 0, size: 10
+            },
+            init: function (paramsObj) {
+                var state = this.state
+                state.pagesize = paramsObj.pagesize;
+                state.total = paramsObj.total
+                paramsObj.pageCount = Math.ceil(paramsObj.total / paramsObj.size);
+                if (isNaN(paramsObj.pageCount)) {
+                    throw new Error("total and pagesize must be a number ")
+                }
+                // 页面元素的外部容器
+                state.container = paramsObj.container || 'body'
+                // 总页数量参数
+                state.pageCount = paramsObj.pageCount
+                // 初始页参数
+                state.current = paramsObj.current
+                // 回调函数
+                state.onPageChange = paramsObj.onPageChange
+                // 当选中页码时添加的类名class
+                state.activeCName = paramsObj.activeCName || 'current'
+                // 代表页码数字的属性
+                state.dataNumberAttr = paramsObj.dataNumberAttr || 'tcdNumber'
+                // 上一页 按钮的类名class
+                state.prevCName = paramsObj.prevCName || 'prevPage'
+                // 下一页 按钮的类名class
+                state.nextCName = paramsObj.nextCName || 'nextPage'
+                // 渲染分页的dom对象
+                this.renderPageDOM(state)
+                // 加载input框输入分页跳转 加载
+
+            },
+            switchPage: function () {
+                var state = this.state, g = this
+
+                // 所有的页码元素a，包括上一页、下一页
+                var pCNameList = this.selectorEle(state.container + " a", true)
+                var current
+                for (i in pCNameList) {
+                    if (i < pCNameList.length)
+                        pCNameList[i].addEventListener("click", function () {
+                            if (this.className == state.activeCName) return
+                            var dataNumberAttr = this.innerHTML
+                            if (dataNumberAttr == "←" || dataNumberAttr == "→") {
+                                current = parseInt(this.className.match(/\d/)[0])
+                            } else if (this.className == state.prevCName) {
+                                state.current > 1 && (current = state.current - 1)
+                            } else if (this.className == state.nextCName) {
+                                state.current < state.pageCount && (current = state.current + 1)
+                            } else {
+                                current = parseInt(dataNumberAttr)
+                            }
+                            current && g.gotoPage(current)
+                        })
+                }
+                // input 输入去哪页
+                document.getElementById("pageinput").addEventListener("keydown", function (e) {
+                    if (e.keyCode == 13 && (parseInt(this.value) | 0) === parseInt(this.value) && g.state.pageCount >= parseInt(this.value)) {
+                        g.state.current = parseInt(this.value)
+                        g.init(g.state)
+                        this.innerHTML = parseInt(this.value)
+                    }
+                })
+                // select 页码size分页
+                document.getElementById("z-select").addEventListener("change", function (e) {
+                    g.state.size = parseInt(this.value)
+                    console.log("this.value1", g.state.size)
+                    g.init(g.state)
+                    this.value = g.state.size
+                    console.log("this.value2", this.value)
+                })
+            },
+            renderPageDOM: function (args) {
+                var pageContainer = this.selectorEle(args.container)
+                var paginationStr = '', start, end
+                var topagenum = this.state.current;
+                var pagesize = this.state.pagesize;
+                var pagesize = pagesize || [10, 20, 30, 40, 50];
+                if (!(Array.isArray(pagesize))) {
+                    throw new Error("PageSize must be an array ")
+                }
+                if (!pagesize.every(e => (e | 0) === e)) {
+                    throw new Error("PageSize in every particular must be a number ")
+                }
+                pagesize = pagesize.map((e) => {
+                    if (e == this.state.size) {
+                        return `<option value ="${e}" selected>${e}条/页</option>`
+                    }
+                    return `<option value ="${e}">${e}条/页</option>`
+                }).join("")
+                if (args.current > 1) {
+                    paginationStr = `<a href = "javascript:;" 
+                           class="prevPage">←</a><select id="z-select" name="cars"
+                            value="${this.state.size}">${pagesize}</select>`;
+                } else {
+                    paginationStr = `<a class="disabled">←</a><select id="z-select" name="cars"
+                            value="${this.state.size}">${pagesize}</select>`;
+                }
+
+                if (args.pageCount < 6) {
+                    // 总页数小于6的时候直接遍历。
+                    for (start = 0; start < args.pageCount; start++) {
+                        end = start + 1;
+                        if (end == args.current) {
+                            paginationStr += '<a class="current">' + end + '</a>';
+                        } else {
+                            paginationStr += '<a href = "javascript:;" class="tcdNumber">' + end + '</a>';
+                        }
+                    }
+                } else {
+                    start = args.current - 1; end = args.current + 1;
+                    if (args.current > 2) {
+                        paginationStr += '<a href = "javascript:;" class="tcdNumber">' + 1 +
+                            '</a>';
+                    } else if (args.pageCount > 4) { end = 4 };
+                    if (args.current > args.pageCount - 3 && args.pageCount - 3 > 0) { start = args.pageCount - 3; }
+                    if (args.current > 3) {
+                        paginationStr += '<a href = "javascript:;" class="tcdNumber ' + (start - 1) +
+                            '" style="" οnmοuseοver="this.innerHTML=\'<\'" οnmοuseοut="this.innerHTML=\'...\'">...</a>';
+                    }
+                    // 中间页数利用循环生成
+                    for (; start <= end; start++) {
+                        if (start <= args.pageCount && start > 0) {
+                            if (start == args.current) {
+                                paginationStr += '<a class="current">' + start + '</a>';
+                            } else {
+                                paginationStr += '<a href = "javascript:;" class="tcdNumber">' + start + '</a>';
+                            }
+                        }
+                    }
+                    // 判断临界值插入省略号
+                    if (args.current < args.pageCount - 2) {
+                        paginationStr += '<a href = "javascript:;" class="tcdNumber ' + (end + 1) +
+                            '" style="width:" οnmοuseοver="this.innerHTML=\'>\'" οnmοuseοut="this.innerHTML=\'...\'">...</a>';
+                    }
+                    // 将中间数值插入html内容中
+                    if (args.current < args.pageCount - 1) {
+                        paginationStr += '<a href="javascript:;" class="tcdNumber">' + args.pageCount + '</a>';
+                    }
+                }
+                if (args.current < args.pageCount) {
+                    paginationStr += `<input type="text" style="width:60px"  id="pageinput" value="${topagenum}" ><a href = "javascript:;" class="nextPage">→</a>`;
+                } else {
+                    paginationStr += `<input type="text" style="width:60px"  id="pageinput" value="${topagenum}" ><a class="disabled">→</a>`;
+                }
+                pageContainer.innerHTML = paginationStr
+                this.switchPage()
+            },
+            gotoPage: function (current) {
+                this.state.current = current
+                this.renderPageDOM(this.state);
+                this.state.onPageChange(this.state.current)
+
+            },
+            hasClass: function (eleObj, className) {
+                return eleObj.classList.contains(className);
+            },
+            inputpage: function (val) {
+
+
+            },
+            selectorEle: function (selector, all) {
+                return all ? document.querySelectorAll(selector) : document.querySelector(selector)
+            }
+        }
+
+        // 调用插件  传入参数
+        var s = new Pagination({
+            // 选择器
+            container: '.page',
+            // 每页多少条数据选择
+            pagesize: [10, 20, 30, 40, 50],
+            size: 10,
+            // 总页数
+            total: 100,
+            // 默认选中页
+            current: 1,
+            // 点击选中页数后 回调
+            onPageChange: function (p) {
+                console.log(p)
+            }
+        });
+
+
+    </script>
+    <style>
+        #pageinput,
+        #z-select {
+            cursor: default;
+            display: inline-block;
+            color: #428bca;
+            height: 25px;
+            font-size: 10pt;
+            line-height: 25px;
+            padding: 0 9px;
+            border: 1px solid #ddd;
+            margin: 0 2px;
+            border-radius: 4px;
+            vertical-align: middle;
+            width: auto;
+
+
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+        .page {
+
+            display: table;
+            margin: 100px auto;
+            color: #ccc;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .page a {
+            cursor: default;
+            display: inline-block;
+            color: #428bca;
+            height: 25px;
+            font-size: 10pt;
+            line-height: 25px;
+            padding: 0 9px;
+            border: 1px solid #ddd;
+            margin: 0 2px;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .page a:not(.disabled):not(.current):hover {
+            border: 1px solid #428bca;
+            cursor: pointer;
+        }
+
+        .page a.current {
+            display: inline-block;
+            font-size: 10pt;
+            height: 25px;
+            line-height: 25px;
+            padding: 0 9px;
+            margin: 0 2px;
+            color: #fff;
+            background-color: #428bca;
+            border: 1px solid #428bca;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .page a.disabled {
+            display: inline-block;
+            font-size: 10pt;
+            height: 25px;
+            line-height: 25px;
+            padding: 0 9px;
+            margin: 0 2px;
+            color: #bfbfbf;
+            background: #f2f2f2;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+            vertical-align: middle;
+            cursor: no-drop;
+        }
+    </style>
+</body>
+
+</html>
